@@ -77,6 +77,19 @@ function diffSummary(record,row){
  if(recordSignature(record)!==rowSignature(row)&&!changes.length)changes.push('세부 내용 변경');
  return changes.slice(0,3).join(' · ')||'변경 없음';
 }
+const oplistFileName=/^oplist_(\d{6})~[^/]*\.docx$/i;
+function parseOplistFileName(fileName){
+ const match=String(fileName??'').match(oplistFileName);
+ if(!match)return null;
+ const raw=match[1],year=2000+Number(raw.slice(0,2)),month=Number(raw.slice(2,4)),day=Number(raw.slice(4,6));
+ const value=new Date(Date.UTC(year,month-1,day));
+ if(value.getUTCFullYear()!==year||value.getUTCMonth()!==month-1||value.getUTCDate()!==day)return null;
+ return {raw,periodStart:`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`};
+}
+function isZipContainer(buffer){
+ const bytes=new Uint8Array(buffer);
+ return bytes.length>=4&&bytes[0]===0x50&&bytes[1]===0x4b&&bytes[2]===0x03&&bytes[3]===0x04;
+}
 function buildReview(records,existingRows){
  const exact=new Map(),byExternal=new Map(),seenUpload=new Set();
  for(const row of existingRows){
@@ -105,7 +118,8 @@ function buildReview(records,existingRows){
 }
 
 function App(){
- const [sheets,setSheets]=useState([]),[sheetIndex,setSheetIndex]=useState(0),[fileName,setFileName]=useState('');
+ const [sheets,setSheets]=useState([]),[sheetIndex,setSheetIndex]=useState(0),[fileName,setFileName]=useState(''),[fileKind,setFileKind]=useState('');
+ const [docxInfo,setDocxInfo]=useState(null);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[selected,setSelected]=useState(null);
  const [hash,setHash]=useState(''),[refreshKey,setRefreshKey]=useState(0),[tab,setTab]=useState('data');
  const [existingRows,setExistingRows]=useState([]),[reviewBusy,setReviewBusy]=useState(false),[reviewMessage,setReviewMessage]=useState(''),[reviewFilter,setReviewFilter]=useState('all'),[excluded,setExcluded]=useState(()=>new Set());
@@ -117,23 +131,33 @@ function App(){
  const reviewRows=review.filter(row=>reviewFilter==='all'||row.status===reviewFilter);
  const appliedCount=appliedRecords.length;
  const excludedCount=all.length-appliedCount;
- const resetUpload=()=>{setSheets([]);setFileName('');setSelected(null);setError('');setExistingRows([]);setReviewMessage('');setReviewFilter('all');setExcluded(new Set());};
+ const resetUpload=()=>{setSheets([]);setFileName('');setFileKind('');setDocxInfo(null);setSelected(null);setError('');setExistingRows([]);setReviewMessage('');setReviewFilter('all');setExcluded(new Set());};
  async function upload(file){
   if(!file||busy)return;
-  setError('');setSelected(null);setSheets([]);setFileName('');setHash('');setExistingRows([]);setReviewMessage('');setReviewFilter('all');setExcluded(new Set());
-  if(!file.name.toLowerCase().endsWith('.xlsx')){setError('.xlsx 파일만 지원합니다.');return;}
+  setError('');setSelected(null);setSheets([]);setFileName('');setFileKind('');setDocxInfo(null);setHash('');setExistingRows([]);setReviewMessage('');setReviewFilter('all');setExcluded(new Set());
+  const name=file.name.toLowerCase();
+  const isXlsx=name.endsWith('.xlsx'),isDocx=name.endsWith('.docx');
+  if(!isXlsx&&!isDocx){setError('.xlsx 또는 oplist_YYMMDD~.docx 파일만 지원합니다.');return;}
   if(file.size>20*1024*1024){setError('첫 버전은 20MB 이하 파일을 지원합니다.');return;}
   setBusy(true);
   try{
-   const {readWorkbook}=await import('./lib/workbook.js');
    const buffer=await file.arrayBuffer();
+   if(isDocx){
+    const parsedName=parseOplistFileName(file.name);
+    if(!parsedName)throw new Error('Word 파일명은 oplist_YYMMDD~.docx 형식이어야 하며 날짜가 유효해야 합니다.');
+    if(!isZipContainer(buffer))throw new Error('정상적인 DOCX 압축 파일이 아닙니다. Word에서 다시 저장해 주세요.');
+    setFileName(file.name);setFileKind('docx');setHash(await fileHash(buffer));setDocxInfo({periodStart:parsedName.periodStart,size:file.size});
+    setReviewMessage('Word 파일 형식 확인 완료. 다음 단계에서 사진·특이사항을 추출합니다.');
+    return;
+   }
+   const {readWorkbook}=await import('./lib/workbook.js');
    const result=await readWorkbook(buffer);
    setHash(await fileHash(buffer));
    if(!result.length)throw new Error('시트가 없습니다.');
    setSheets(result);
    setSheetIndex(Math.max(0,result.findIndex(s=>!s.error)));
-   setFileName(file.name);
-  }catch(e){setError('파일을 읽지 못했습니다. 암호화되지 않은 정상 XLSX인지 확인해 주세요. '+e.message);}
+   setFileName(file.name);setFileKind('xlsx');
+  }catch(e){setError(`${isDocx?'Word 파일을 확인하지 못했습니다.':'엑셀 파일을 읽지 못했습니다. 암호화되지 않은 정상 XLSX인지 확인해 주세요.'} ${e.message}`);}
   finally{setBusy(false);}
  }
  useEffect(()=>{
@@ -160,16 +184,17 @@ function App(){
  return <div className="layout">
   <aside><div className="brand">▥ CONSULT</div><span className="muted">상담 데이터 워크스페이스</span><button className={'nav '+(tab==='data'?'active':'')} onClick={()=>setTab('data')}>전체 자료</button><button className={'nav '+(tab==='upload'?'active':'')} onClick={()=>setTab('upload')}>↥ 업로드</button><div className="roadmap">다음 구현<br/>고객 상세 · 메모 입력<br/>홈 대시보드 · 상세 분석</div><footer>독립 프로젝트<br/>Supabase consult 스키마</footer></aside>
   <main>
-   <header><span>{tab==='data'?'전체 자료':'업로드'}</span><span className="badge">{tab==='data'?'주요 통계 · 전체 자료':'엑셀 업로드 · DB 저장'}</span></header>
+   <header><span>{tab==='data'?'전체 자료':'업로드'}</span><span className="badge">{tab==='data'?'주요 통계 · 전체 자료':fileKind==='docx'?'Word 형식 확인':'엑셀 업로드 · DB 저장'}</span></header>
    {tab==='data'?<section className="intro"><div><h1>전체 자료</h1><p>DB에 저장된 상담 자료를 조회하고 확인 필요 항목을 필터링합니다.</p></div><button onClick={()=>setRefreshKey(k=>k+1)}>전체 자료 새로고침</button></section>:<section className="intro"><div><h1>상담 자료 업로드</h1><p>엑셀을 올리고 기존 DB와 비교한 뒤 적용할 행만 저장합니다.</p></div><button disabled={!sheets.length||busy} onClick={resetUpload}>자료 비우기</button></section>}
    {tab==='upload'&&<>
     <label className={'drop '+(busy?'busy':'')} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();upload(e.dataTransfer.files[0]);}}>
-     <input type="file" accept=".xlsx" disabled={busy} onChange={e=>{upload(e.target.files[0]);e.target.value='';}}/>
-     <strong>{busy?'엑셀을 읽고 있습니다…':'＋ 엑셀 파일을 선택하거나 여기에 놓으세요'}</strong>
-     <span>XLSX · 최대 20MB · 파일 선택 시 로컬 처리 · 적용 선택 후 DB 저장</span>
+     <input type="file" accept=".xlsx,.docx" disabled={busy} onChange={e=>{upload(e.target.files[0]);e.target.value='';}}/>
+     <strong>{busy?'파일을 확인하고 있습니다…':'＋ XLSX 또는 Word 파일을 선택하거나 여기에 놓으세요'}</strong>
+     <span>XLSX · oplist_YYMMDD~.docx · 최대 20MB · 파일 선택 시 로컬 검증</span>
     </label>
     {error&&<div role="alert" className="alert">{error}</div>}
-    <CloudPanel fileName={fileName} hash={hash} sheet={reviewedSheet} onSaved={()=>{setRefreshKey(k=>k+1);setTab('data');}} onIdentityChange={()=>{resetUpload();setHash('');}}/>
+    {fileKind==='docx'&&docxInfo&&<section className="card plan-body"><div className="toolbar"><h2>Word 파일 형식 확인</h2><span className="badge">검증 완료</span></div><p><strong>{fileName}</strong></p><p>수술기간 시작일: {docxInfo.periodStart} · 파일 크기: {(docxInfo.size/1024/1024).toFixed(2)}MB</p><p className="notice">현재 단계에서는 파일을 저장하지 않습니다. 다음 단계에서 Word 안의 사진과 특이사항을 추출합니다.</p></section>}
+    {fileKind!=='docx'&&<CloudPanel fileName={fileName} hash={hash} sheet={reviewedSheet} onSaved={()=>{setRefreshKey(k=>k+1);setTab('data');}} onIdentityChange={()=>{resetUpload();setHash('');}}/>}
     {sheets.length>0&&<section className="card upload-summary">
      <div className="toolbar"><h2>업로드 자료 검토</h2><select aria-label="시트 선택" value={sheetIndex} onChange={e=>{setSheetIndex(Number(e.target.value));setSelected(null);}}>{sheets.map((s,i)=><option value={i} key={s.name}>{s.name}</option>)}</select></div>
      {sheet.error?<div role="alert" className="alert">{sheet.error}</div>:<>
