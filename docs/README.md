@@ -39,15 +39,18 @@ flowchart TB
 EMR에서 캡처한 사진을 OneNote와 Word를 거쳐 OneDrive 및 Supabase Storage에 저장하고, React에서 미리보기하는 업무 흐름이다.
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph USER[사용자가 하는 일]
+        direction TB
         U1[EMR에서 환자 사진 캡처]
         U2[OneNote에 환자별로 사진 정리]
         U3[주기적으로 Word 파일로 데이터 추출]
         U4[React에서 환자 사진 미리보기]
+        U1 --> U2 --> U3 --> U4
     end
 
     subgraph SYSTEM[프로그램에서 일어나는 일]
+        direction TB
         S1[Word 파일 수집]
         S2[Word 문서에서 사진과 주변 텍스트 추출]
         S3[등록번호·이름·사진 순서 분석]
@@ -59,17 +62,17 @@ flowchart TB
         S9[Supabase Storage에서 등록번호 ID 기준으로 저장]
         S10[저장 경로와 환자·상담 연결정보를 DB에 기록]
         S11[Supabase Storage URL 조회]
+        S1 --> S2 --> S3 --> S4
+        S4 -->|신규 사진| S5
+        S4 -->|기존과 동일| S6
+        S5 --> S7 --> S8
+        S5 --> S9
+        S6 --> S10
+        S8 --> S10
+        S9 --> S10 --> S11
     end
 
-    U1 --> U2 --> U3 --> S1
-    S1 --> S2 --> S3 --> S4
-    S4 -->|신규 사진| S5
-    S4 -->|기존과 동일| S6
-    S5 --> S7 --> S8
-    S5 --> S9
-    S6 --> S10
-    S8 --> S10
-    S9 --> S10 --> S11 --> U4
+    USER --> SYSTEM
 ```
 
 ### 사진 저장 기준
