@@ -73,6 +73,9 @@ flowchart TB
     S6 --> S10
     S8 --> S10
     S9 --> S10 --> S11 --> U4
+
+    classDef actualSave fill:#fff7ed,stroke:#f59e0b,stroke-width:3px,color:#7c2d12
+    class S6,S8,S9,S10 actualSave
 ```
 
 ### 사진 저장 기준
