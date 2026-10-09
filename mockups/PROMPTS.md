@@ -1,0 +1,15 @@
+# 홈 화면 시안 생성 기록
+
+내장 image_gen 도구로 생성하고 JPG로 변환했다. 실제 고객 데이터가 아닌 가상 데이터이며, 차트 수치·날짜·증감률은 구현 명세나 검증된 통계가 아니다.
+
+## ② 대시보드 중심
+
+파일: `home-02-dashboard.jpg`
+
+Use case: ui-mockup. Generate a polished high fidelity Korean desktop web app homepage screenshot for independent consultation analytics app 'CONSULT'. Landscape 16:10, crisp legible Korean typography, flat straight-on screenshot, no device frame. Consistent restrained white and very pale gray surfaces, dark navy text, teal accents, thin borders, subtle rounded cards. Left narrow sidebar logo CONSULT, menus 홈, 전체 자료, 분석, 업로드 관리, bottom 설정. Top right 엑셀 업로드 button and small avatar. All numbers and people are fictional examples; visible subtle label '가상 데이터 · 화면 시안'. No real personal information, no face images, no medical imagery. Option 02 dashboard-first. Page title '상담 현황', subtitle '상담부터 수술까지, 전체 흐름을 확인하세요'. Date filter '2026.05.01 – 2026.05.31'. Four KPI cards '상담 고객' 128명, '상담 건수' 156건, '수술 완료' 64건, '30일 전환율' 42.0%, last includes small '관찰 완료 상담 기준'. Main content large elegant teal line chart '월별 상담 추이' months 12월 through 5월 and adjacent horizontal bars '상담항목별 전환율' 눈 코 리프팅 기타. Lower two cards '상담 후 수술까지' histogram and '유입 경로' donut. Each card subtle '자료 보기 ↗'. No customer data table on this home screen. Balanced spacious premium analytics product design, realistic coherent chart axes. Small footer '데이터 기준일 2026.05.31'.
+
+## ③ 요약·테이블 통합
+
+파일: `home-03-summary-table.jpg`
+
+Use case: ui-mockup. Generate a polished high fidelity Korean desktop web app homepage screenshot for independent consultation analytics app 'CONSULT'. Landscape 16:10, crisp legible Korean typography, flat straight-on screenshot, no device frame. Consistent restrained white and very pale gray surfaces, dark navy text, teal accents, thin borders, subtle rounded cards. Left narrow sidebar logo CONSULT, menus 홈, 전체 자료, 분석, 업로드 관리, bottom 설정. Top right 엑셀 업로드 button and small avatar. All numbers and people are fictional examples; visible subtle label '가상 데이터 · 화면 시안'. No real personal information, no face images, no medical imagery. Option 03 summary plus table integrated. Page title '자료·현황', subtitle '상담 기록과 주요 지표를 한눈에 확인하세요'. Sidebar selected 홈. Full-width common filter strip 기간 2026.05.01–2026.05.31, 상담항목 전체, 담당자 전체, 진행 상태 전체, 검색. Compact three KPI cards '상담 고객 128명', '상담 건수 156건', '수술 완료 64건'. Below shallow compact chart band: tiny monthly teal line chart '상담 추이' and horizontal bars '항목별 상담', with '차트 접기' control. Dominant lower 55 percent is spacious readable data table card heading '상담 목록' with tabs '상담별' selected and '고객별', right '열 선택' and '내보내기'. Table headers 고객 / 상담일 / 상담항목 / 담당자 / 상담 상태 / 수술일 / 수술 상태. 7 realistic fictional masked rows 김*아 이*준 박*서 최*윤 정*민 한*우 윤*진; dates May 2026, items 눈 코 리프팅, 담당자 상담자 A or B, badges 상담완료 예약 취소 and 수술완료 예정 미예약. No phone numbers. Each row chevron suggesting details. Footer '총 156건 · 1–7' and pagination. Small text '필터에 따라 요약과 목록이 함께 변경됩니다'. Clean readable information-dense operational dashboard.

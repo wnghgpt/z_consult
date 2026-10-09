@@ -1,0 +1,1 @@
+{"name":"z-consult","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"vite --host 127.0.0.1","build":"vite build","test":"node --test tests/*.test.js","preview":"vite preview --host 127.0.0.1"},"dependencies":{"@supabase/supabase-js":"^2.117.2","exceljs":"^4.4.0","react":"^19.1.1","react-dom":"^19.1.1"},"devDependencies":{"vite":"^7.1.0"}}
